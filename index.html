@@ -1,0 +1,35 @@
+<html>
+
+
+<script>
+    var worker = new Worker('/worker.js');
+
+    function ping(num, buffer) {
+        if (buffer.byteLength === 0) {
+            console.error('Buffer not properly received');
+        }
+
+        console.log('Foreground thread now sending '+num+'-th ping');
+        worker.postMessage({
+            num: num,
+            command: 'ping',
+            buffer: buffer
+        }, [buffer]);
+
+        if (buffer.byteLength > 0) {
+            console.error('Buffer not properly transferred');
+        }
+    }
+
+    worker.onmessage = function(event) {
+        console.log('Foreground thread received '+event.data.num+'-th pong');
+        ping(event.data.num+1, event.data.buffer);
+    };
+
+    worker.onerror = function(event) {
+        console.error('Uh-oh, this should not happen: ', event);
+    };
+
+    ping(1, new ArrayBuffer(32*1024*1024));
+</script>
+</html>
